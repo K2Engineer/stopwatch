@@ -5,41 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stopwatch with Laps</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; }
+        /* Styling for the stopwatch interface */
+        body { font-family: Castellar, sans-serif; text-align: center; background: #f4f4f4; }
         h1 { margin-top: 20px; }
-        #timer { font-size: 2em; margin: 20px 0; }
+        #timer { font-size: 2em; margin: 10px 0; }
         button { padding: 10px 20px; margin: 5px; font-size: 1em; cursor: pointer; }
-        #laps { list-style: none; padding: 0; margin-top: 20px; }
+        #laps { list-style: none; padding: 0; margin-top: 10px; }
         .lap-item { background: white; padding: 5px; margin: 5px auto; width: 200px; border-radius: 5px; }
+        #avgLapTime, #lapCounter { font-size: 1.2em; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
+    <!-- Stopwatch Title -->
     <h1>Stopwatch</h1>
-    <div id="timer">00:00.000</div>
     
+    <!-- Display Stopwatch Time -->
+    <div id="timer">00:00.000</div>
+
+    <!-- Buttons Section -->
     <button id="startPause">START</button>
     <button id="lap" style="display: none;">LAP</button>
     <button id="reset" style="display: none;">RESET</button>
 
+    <!-- Display Average Lap Time -->
+    <div id="avgLapTime">Average Lap Time: 0.000 sec</div>
+    
+    <!-- Display Lap Number -->
+    <div id="lapCounter">Lap #: 0</div>
+
+    <!-- Lap Times Section -->
     <h2>Lap Times</h2>
     <ul id="laps"></ul>
     
     <script>
-        let startTime = 0;
-        let elapsedTime = 0;
-        let timerInterval;
-        let running = false;
-        let laps = [];
-        let lapCount = 0;
-        let totalLapTime = 0;
+        // Variables for time tracking
+        let startTime = 0;        // Stores stopwatch start time
+        let elapsedTime = 0;      // Stores total elapsed time
+        let timerInterval;        // Interval ID for updating the stopwatch
+        let running = false;      // Boolean flag to check if the timer is running
+        let laps = [];            // Array to store lap timestamps
+        let lapCount = 0;         // Counter for the number of laps
+        let totalLapTime = 0;     // Total time of all laps for averaging
 
+        // DOM elements
         const timerDisplay = document.getElementById("timer");
+        const avgLapTimeDisplay = document.getElementById("avgLapTime");
+        const lapCounterDisplay = document.getElementById("lapCounter");
         const startPauseBtn = document.getElementById("startPause");
         const lapBtn = document.getElementById("lap");
         const resetBtn = document.getElementById("reset");
         const lapsList = document.getElementById("laps");
 
+        // Function to format time as MM:SS.milliseconds
         function formatTime(ms) {
             let minutes = Math.floor(ms / 60000);
             let seconds = Math.floor((ms % 60000) / 1000);
@@ -51,49 +69,73 @@
             );
         }
 
+        // Function to format time in total seconds with milliseconds
+        function formatTimeInSeconds(ms) {
+            let totalSeconds = (ms / 1000).toFixed(3); // Convert to seconds with 3 decimal places
+            return totalSeconds + " sec";
+        }
+
+        // Function to start or pause the stopwatch
         function startPause() {
             if (!running) {
-                startTime = Date.now() - elapsedTime;
+                // Start the stopwatch
+                startTime = Date.now() - elapsedTime; // Adjust start time if resuming
                 timerInterval = setInterval(() => {
                     elapsedTime = Date.now() - startTime;
                     timerDisplay.innerText = formatTime(elapsedTime);
-                }, 10);
+                }, 10); // Update timer every 10 milliseconds
+                
+                // Update button states
                 startPauseBtn.innerText = "Pause";
                 startPauseBtn.style.backgroundColor = "red";
-                lapBtn.style.display = "inline-block";
-                resetBtn.style.display = "none"; // Hide reset when running
+                lapBtn.style.display = "inline-block"; // Show Lap button
+                resetBtn.style.display = "none"; // Hide Reset button when running
                 running = true;
             } else {
-                clearInterval(timerInterval);
+                // Pause the stopwatch
+                clearInterval(timerInterval); // Stop the interval updates
                 startPauseBtn.innerText = "Resume";
                 startPauseBtn.style.backgroundColor = "green";
-                resetBtn.style.display = "inline-block";
-                lapBtn.style.display = "none"; // Hide lap when paused
+                resetBtn.style.display = "inline-block"; // Show Reset button
+                lapBtn.style.display = "none"; // Hide Lap button when paused
                 running = false;
             }
         }
 
+        // Function to record a lap time
         function recordLap() {
-            if (!running) return;
-            let lapTime = elapsedTime - (laps.length > 0 ? laps[laps.length - 1] : 0);
-            laps.push(elapsedTime);
+            if (!running) return; // Ignore if stopwatch isn't running
+            
+            let lapTime = elapsedTime - (laps.length > 0 ? laps[laps.length - 1] : 0); // Calculate time since last lap
+            laps.push(elapsedTime); // Store total elapsed time at this lap
             lapCount++;
 
-            totalLapTime += lapTime;
-            let avgLapTime = totalLapTime / lapCount;
+            totalLapTime += lapTime; // Add lap time to total
+            let avgLapTime = totalLapTime / lapCount; // Calculate average lap time
 
+            // Update Lap Number display
+            lapCounterDisplay.innerText = `Lap #: ${lapCount}`;
+
+            // Create new lap entry in the list
             const lapItem = document.createElement("li");
             lapItem.classList.add("lap-item");
             lapItem.innerText = `Lap ${lapCount}: ${formatTime(lapTime)}`;
             lapsList.appendChild(lapItem);
+
+            // Update Average Lap Time display
+            avgLapTimeDisplay.innerText = `Average Lap Time: ${formatTimeInSeconds(avgLapTime)}`;
         }
 
+        // Function to reset the stopwatch
         function resetTimer() {
+            // First confirmation popup
             if (confirm("Are you sure you want to reset? This will clear all lap times and restart the stopwatch.")) {
+                // Second confirmation popup
                 if (!confirm("This action is permanent. Do you REALLY want to reset? Have you recorded the Overall Time, Lap #, and Avg. Lap Time?")) {
-                    return;
+                    return; // Exit function if user cancels second confirmation
                 }
                 
+                // Reset all values
                 clearInterval(timerInterval);
                 startTime = 0;
                 elapsedTime = 0;
@@ -102,15 +144,19 @@
                 totalLapTime = 0;
                 running = false;
                 
+                // Reset UI elements
                 timerDisplay.innerText = "00:00.000";
+                avgLapTimeDisplay.innerText = "Average Lap Time: 0.000 sec";
+                lapCounterDisplay.innerText = "Lap #: 0";
                 startPauseBtn.innerText = "START";
                 startPauseBtn.style.backgroundColor = "";
                 resetBtn.style.display = "none";
                 lapBtn.style.display = "none";
-                lapsList.innerHTML = "";
+                lapsList.innerHTML = ""; // Clear lap records
             }
         }
 
+        // Event Listeners for buttons
         startPauseBtn.addEventListener("click", startPause);
         lapBtn.addEventListener("click", recordLap);
         resetBtn.addEventListener("click", resetTimer);
